@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: notes_db
+    environment:
+      POSTGRES_USER: notes_user
+      POSTGRES_PASSWORD: notes_password
+      POSTGRES_DB: notes_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgres/data
+    networks:
+      - notes-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U notes_user -d notes_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  notes_api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: notes_api
+    ports:
+      - "8080:8080"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=notes_user
+      - DB_PASSWORD=notes_password
+      - DB_NAME=notes_db
+      - PORT=8080
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - notes-network
+    restart: unless-stopped
+
+volumes:
+  pg_data:
+
+networks:
+  notes-network:
+    driver: bridge

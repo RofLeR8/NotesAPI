@@ -1,0 +1,9 @@
+.git
+.gitignore
+*.md
+.env
+.env.*
+!go.mod
+!go.sum
+internal/handlers/*_test.go
+internal/repository/*_test.go
