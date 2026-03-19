@@ -16,6 +16,26 @@ test:
 clean:
 	rm -rf bin/
 
+# Install goose for migrations
+migrate-install:
+	go install github.com/pressly/goose/v3/cmd/goose@latest
+
+# Create new migration
+migrate-create:
+	goose -dir migrations create $(name) sql
+
+# Run migrations
+migrate-up:
+	goose -dir migrations postgres "$(DB_URL)" up
+
+# Rollback last migration
+migrate-down:
+	goose -dir migrations postgres "$(DB_URL)" down
+
+# Check migration status
+migrate-status:
+	goose -dir migrations postgres "$(DB_URL)" status
+
 # Build Docker image
 docker-build:
 	docker build -t notes-api:latest .

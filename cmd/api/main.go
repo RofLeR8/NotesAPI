@@ -25,8 +25,8 @@ func main() {
 	}
 
 	jwtConfig := utils.JWTConfig{
-		SecretKey:      "asdasdasdasddssfgdsfg1235",
-		AccessExpHours: 12,
+		SecretKey:      cfg.JWTSecret,
+		AccessExpHours: cfg.JWTExpHours,
 	}
 
 	userRepo := repository.NewUserRepository(db)
@@ -36,6 +36,8 @@ func main() {
 	noteHandler := handlers.NewNoteHandler(noteRepo)
 
 	r := gin.Default()
+
+	r.GET("/api/health", handlers.HealthCheck)
 
 	users := r.Group("/api/users")
 	{

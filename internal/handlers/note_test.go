@@ -14,24 +14,24 @@ import (
 )
 
 func setupNoteHandlerWithAuth(t *testing.T) (*NoteHandler, string, *models.User) {
-	repo := repository.NewNoteRepository(handlerDB)
+	repo := repository.NewNoteRepository(testDB)
 	handler := NewNoteHandler(repo)
-	
+
 	// Create a test user
 	testUser := &models.User{
 		Email:    "testuser@example.com",
 		Password: "hashedpassword",
 	}
-	if err := handlerDB.Create(testUser).Error; err != nil {
+	if err := testDB.Create(testUser).Error; err != nil {
 		t.Fatalf("Failed to create test user: %v", err)
 	}
-	
+
 	token := generateTestToken(t, testUser.ID)
 	return handler, token, testUser
 }
 
 func TestNoteHandler_CreateNote(t *testing.T) {
-	teardown := setupHandlerTestDB(t)
+	teardown := setupTestDB(t)
 	defer teardown()
 
 	handler, token, testUser := setupNoteHandlerWithAuth(t)
@@ -121,7 +121,7 @@ func TestNoteHandler_CreateNote(t *testing.T) {
 }
 
 func TestNoteHandler_GetNotes(t *testing.T) {
-	teardown := setupHandlerTestDB(t)
+	teardown := setupTestDB(t)
 	defer teardown()
 
 	handler, token, _ := setupNoteHandlerWithAuth(t)
@@ -134,15 +134,15 @@ func TestNoteHandler_GetNotes(t *testing.T) {
 		Email:    "getnotesuser2@example.com",
 		Password: "hashedpassword",
 	}
-	handlerDB.Create(user1)
-	handlerDB.Create(user2)
+	testDB.Create(user1)
+	testDB.Create(user2)
 
 	notes := []*models.Note{
 		{Title: "Note 1", Content: "Content 1", UserID: user1.ID},
 		{Title: "Note 2", Content: "Content 2", UserID: user1.ID},
 	}
 	for _, note := range notes {
-		handlerDB.Create(note)
+		testDB.Create(note)
 	}
 
 	tests := []struct {
@@ -213,7 +213,7 @@ func TestNoteHandler_GetNotes(t *testing.T) {
 }
 
 func TestNoteHandler_GetNote(t *testing.T) {
-	teardown := setupHandlerTestDB(t)
+	teardown := setupTestDB(t)
 	defer teardown()
 
 	handler, token, _ := setupNoteHandlerWithAuth(t)
@@ -226,15 +226,15 @@ func TestNoteHandler_GetNote(t *testing.T) {
 		Email:    "getnoteuser2@example.com",
 		Password: "hashedpassword",
 	}
-	handlerDB.Create(user1)
-	handlerDB.Create(user2)
+	testDB.Create(user1)
+	testDB.Create(user2)
 
 	testNote := &models.Note{
 		Title:   "Test Note",
 		Content: "Test Content",
 		UserID:  user1.ID,
 	}
-	handlerDB.Create(testNote)
+	testDB.Create(testNote)
 
 	tests := []struct {
 		name           string
@@ -313,7 +313,7 @@ func TestNoteHandler_GetNote(t *testing.T) {
 }
 
 func TestNoteHandler_UpdateNote(t *testing.T) {
-	teardown := setupHandlerTestDB(t)
+	teardown := setupTestDB(t)
 	defer teardown()
 
 	handler, token, _ := setupNoteHandlerWithAuth(t)
@@ -326,15 +326,15 @@ func TestNoteHandler_UpdateNote(t *testing.T) {
 		Email:    "updatenoteuser2@example.com",
 		Password: "hashedpassword",
 	}
-	handlerDB.Create(user1)
-	handlerDB.Create(user2)
+	testDB.Create(user1)
+	testDB.Create(user2)
 
 	testNote := &models.Note{
 		Title:   "Original Title",
 		Content: "Original Content",
 		UserID:  user1.ID,
 	}
-	handlerDB.Create(testNote)
+	testDB.Create(testNote)
 
 	tests := []struct {
 		name           string
@@ -346,10 +346,10 @@ func TestNoteHandler_UpdateNote(t *testing.T) {
 		expectedStatus int
 	}{
 		{
-			name:   "successful update note",
-			noteID: strconv.FormatUint(uint64(testNote.ID), 10),
-			token:  token,
-			userID: user1.ID,
+			name:           "successful update note",
+			noteID:         strconv.FormatUint(uint64(testNote.ID), 10),
+			token:          token,
+			userID:         user1.ID,
 			setContextUser: true,
 			input: map[string]interface{}{
 				"title":   "Updated Title",
@@ -358,10 +358,10 @@ func TestNoteHandler_UpdateNote(t *testing.T) {
 			expectedStatus: http.StatusOK,
 		},
 		{
-			name:   "note not owned by user",
-			noteID: strconv.FormatUint(uint64(testNote.ID), 10),
-			token:  generateTestToken(t, user2.ID),
-			userID: user2.ID,
+			name:           "note not owned by user",
+			noteID:         strconv.FormatUint(uint64(testNote.ID), 10),
+			token:          generateTestToken(t, user2.ID),
+			userID:         user2.ID,
 			setContextUser: true,
 			input: map[string]interface{}{
 				"title":   "Updated Title",
@@ -370,10 +370,10 @@ func TestNoteHandler_UpdateNote(t *testing.T) {
 			expectedStatus: http.StatusNotFound,
 		},
 		{
-			name:   "missing title",
-			noteID: strconv.FormatUint(uint64(testNote.ID), 10),
-			token:  token,
-			userID: user1.ID,
+			name:           "missing title",
+			noteID:         strconv.FormatUint(uint64(testNote.ID), 10),
+			token:          token,
+			userID:         user1.ID,
 			setContextUser: true,
 			input: map[string]interface{}{
 				"content": "Updated Content",
@@ -381,10 +381,10 @@ func TestNoteHandler_UpdateNote(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:   "invalid note id format",
-			noteID: "invalid",
-			token:  token,
-			userID: user1.ID,
+			name:           "invalid note id format",
+			noteID:         "invalid",
+			token:          token,
+			userID:         user1.ID,
 			setContextUser: true,
 			input: map[string]interface{}{
 				"title":   "Updated Title",
@@ -393,10 +393,10 @@ func TestNoteHandler_UpdateNote(t *testing.T) {
 			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name:   "non-existing note",
-			noteID: "99999",
-			token:  token,
-			userID: user1.ID,
+			name:           "non-existing note",
+			noteID:         "99999",
+			token:          token,
+			userID:         user1.ID,
 			setContextUser: true,
 			input: map[string]interface{}{
 				"title":   "Updated Title",
@@ -444,7 +444,7 @@ func TestNoteHandler_UpdateNote(t *testing.T) {
 }
 
 func TestNoteHandler_DeleteNote(t *testing.T) {
-	teardown := setupHandlerTestDB(t)
+	teardown := setupTestDB(t)
 	defer teardown()
 
 	handler, token, _ := setupNoteHandlerWithAuth(t)
@@ -457,15 +457,15 @@ func TestNoteHandler_DeleteNote(t *testing.T) {
 		Email:    "deletenoteuser2@example.com",
 		Password: "hashedpassword",
 	}
-	handlerDB.Create(user1)
-	handlerDB.Create(user2)
+	testDB.Create(user1)
+	testDB.Create(user2)
 
 	testNote := &models.Note{
 		Title:   "Note to delete",
 		Content: "Content to delete",
 		UserID:  user1.ID,
 	}
-	handlerDB.Create(testNote)
+	testDB.Create(testNote)
 
 	tests := []struct {
 		name           string

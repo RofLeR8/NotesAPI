@@ -30,7 +30,7 @@ func (h *NoteHandler) CreateNote(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "user id not found in context"})
 	}
 	var input CreateNoteInput
-	if err := c.ShouldBindBodyWithJSON(&input); err != nil {
+	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
